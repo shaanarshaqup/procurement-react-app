@@ -48,7 +48,7 @@ const BidSplitSection: React.FC<{ proposals: any[] }> = ({ proposals }) => {
         <div className="mt-3 space-y-4">
           {proposals.map((p: any) => (
             <div key={p.id} className="space-y-2">
-              <span className="font-bold text-[14px] flex">
+              <span className="font-bold text-sm flex">
                 <span>
                   Bid split - {p.vendorName || `Vendor #${p.vendorId}`}
                 </span>
@@ -258,28 +258,28 @@ const RfpAwardflow: React.FC<IRfpDetailRight> = ({ rfpDetails, trigger }) => {
               className={`border border-lightblue p-4 flex text-sm rounded-lg bg-[#EDF4FD] mb-[16px] flex-col`}
             >
               <div className="pr-[55px] group relative">
-                <span className="font-bold text-[16px] mb-[17.5px] flex items-center gap-2">
-                  <span>Decision Paper</span>
+                <span className="font-semibold text-sm flex items-center gap-2">
+                  <span>Decision Paper:</span>
                 </span>
                 <div className="flex flex-col" onClick={() => setShowModal(true)}>
                   <p className="font-bold text-blue-600 cursor-pointer">
                     {"View >"}
                   </p>
                 </div>
+                <br/>
                 {!hasDecisionPaper && (
                   <p className="text-xs text-red-600 mt-2">No decision paper found for this RFP.</p>
                 )}
               </div>
-            </div>
-            <span className="font-bold text-[16px] mb-[17.5px] flex items-center gap-2">
-              <span>Evaluation Reports</span>
+              <span className="font-semibold text-sm flex items-center gap-2">
+              <span>Evaluation Reports:</span>
             </span>
             {evaluationDocuments.length > 0 ? (
               <div className="flex flex-col">
                 {evaluationDocuments.map((d: any, idx: number) => (
                   <span key={idx}>
                     <a
-                      className="text-[13px] flex items-end mb-5"
+                      className="text-[13px] flex items-end"
                       href={d.documentUrl ? d.documentUrl : d.document}
                       target="blank"
                       download={d.documentName}
@@ -302,10 +302,11 @@ const RfpAwardflow: React.FC<IRfpDetailRight> = ({ rfpDetails, trigger }) => {
             ) : (
               <p className="text-xs text-red-600">No evaluation reports uploaded.</p>
             )}
-
+            </div>
+            
             <div className="w-full">
               <div className="space-y-4">
-                <span className="font-bold text-[16px] mb-[8px] flex items-center gap-2">
+                <span className="font-bold text-sm mb-[8px] flex items-center gap-2">
                   <span>Vendor Proposals</span>
                 </span>
                 {selectedProposals.length > 0 ? (
