@@ -30,6 +30,53 @@ interface IRfpDetailRight {
   trigger: () => void;
 }
 
+// Collapsible Bid Split section under Vendor Proposals
+const BidSplitSection: React.FC<{ proposals: any[] }> = ({ proposals }) => {
+  const [expanded, setExpanded] = useState<boolean>(false);
+
+  return (
+    <div className="w-full">
+      <button
+        type="button"
+        className="text-blue-600 text-sm underline"
+        onClick={() => setExpanded((x) => !x)}
+      >
+        {expanded ? "Hide details" : "View more info"}
+      </button>
+
+      {expanded && (
+        <div className="mt-3 space-y-4">
+          {proposals.map((p: any) => (
+            <div key={p.id} className="space-y-2">
+              <span className="font-bold text-[14px] flex">
+                <span>
+                  Bid split - {p.vendorName || `Vendor #${p.vendorId}`}
+                </span>
+              </span>
+              <ViewTable
+                columns={["itemCode", "itemName", "quantity", "amount"]}
+                columnLabels={{
+                  itemCode: "Item Code",
+                  itemName: "Item Name",
+                  quantity: "Qty",
+                  amount: "Amount",
+                }}
+                items={(p.vendorRfpProposalItems || []).map((it: any) => ({
+                  id: it.id,
+                  itemCode: it.rfpItem?.itemCode,
+                  itemName: it.rfpItem?.itemName,
+                  quantity: it.rfpItem?.quantity,
+                  amount: it.amount,
+                }))}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const RfpAwardflow: React.FC<IRfpDetailRight> = ({ rfpDetails, trigger }) => {
   const [stepsList, setStepsList] = useState<any[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -39,6 +86,7 @@ const RfpAwardflow: React.FC<IRfpDetailRight> = ({ rfpDetails, trigger }) => {
   const [evaluationDocuments, setEvaluationDocuments] = useState<any>([]);
   const [selectedProposals, setSelectedProposals] = useState<any[]>([]);
   const [enableSelect, setEnableSelect] = useState<boolean>(false);
+  const [hasDecisionPaper, setHasDecisionPaper] = useState<boolean>(false);
 
   const setupRfpProposalApproveReject = async () => {
     try {
@@ -84,7 +132,12 @@ const RfpAwardflow: React.FC<IRfpDetailRight> = ({ rfpDetails, trigger }) => {
         const decissionPaperTemp = await getRfpDecisionPaperByRfpIdAsync(
           rfpDetails?.id
         );
-        if (decissionPaperTemp) setDecissionPaper(decissionPaperTemp);
+        if (decissionPaperTemp) {
+          setDecissionPaper(decissionPaperTemp);
+          setHasDecisionPaper(true);
+        } else {
+          setHasDecisionPaper(false);
+        }
       }
     } catch (error) {
       console.error("Error setting up RFP proposal approve/reject:", error);
@@ -195,58 +248,67 @@ const RfpAwardflow: React.FC<IRfpDetailRight> = ({ rfpDetails, trigger }) => {
                 <span className="pl-[8px]">Approval for Award</span>
               </span>
             </div>
+            {/* Readiness banner */}
+            {!(hasDecisionPaper && evaluationDocuments.length > 0 && selectedProposals.length > 0) && (
+              <div className="border border-yellow-300 bg-yellow-50 text-yellow-800 rounded-lg p-3 mb-3 text-sm">
+                Please provide all required items before proceeding with approval: Decision Paper, Evaluation Reports, and Vendor Proposals.
+              </div>
+            )}
             <div
               className={`border border-lightblue p-4 flex text-sm rounded-lg bg-[#EDF4FD] mb-[16px] flex-col`}
             >
               <div className="pr-[55px] group relative">
-                <span className="font-bold text-[16px] mb-[17.5px] flex">
-                  <span>Decission Paper</span>
+                <span className="font-bold text-[16px] mb-[17.5px] flex items-center gap-2">
+                  <span>Decision Paper</span>
                 </span>
                 <div className="flex flex-col" onClick={() => setShowModal(true)}>
                   <p className="font-bold text-blue-600 cursor-pointer">
                     {"View >"}
                   </p>
                 </div>
+                {!hasDecisionPaper && (
+                  <p className="text-xs text-red-600 mt-2">No decision paper found for this RFP.</p>
+                )}
               </div>
             </div>
-            {evaluationDocuments.length > 0 && (
-              <>
-                <span className="font-bold text-[16px] mb-[17.5px] flex">
-                  <span>Evaluation Report</span>
-                </span>
-                <div className="flex flex-col">
-                  {evaluationDocuments.map((d: any) => (
-                    <span>
-                      <a
-                        className="text-[13px] flex items-end mb-5"
-                        href={d.documentUrl ? d.documentUrl : d.document}
-                        target="blank"
-                        download={d.documentName}
+            <span className="font-bold text-[16px] mb-[17.5px] flex items-center gap-2">
+              <span>Evaluation Reports</span>
+            </span>
+            {evaluationDocuments.length > 0 ? (
+              <div className="flex flex-col">
+                {evaluationDocuments.map((d: any, idx: number) => (
+                  <span key={idx}>
+                    <a
+                      className="text-[13px] flex items-end mb-5"
+                      href={d.documentUrl ? d.documentUrl : d.document}
+                      target="blank"
+                      download={d.documentName}
+                    >
+                      <DocumentIconByExtension
+                        className="w-[25px] h-[25px]"
+                        filePath={d.documentUrl}
+                      />
+                      <p
+                        className="pl-[4px]"
+                        style={{ color: "blue", textDecoration: "underline" }}
                       >
-                        <DocumentIconByExtension
-                          className="w-[25px] h-[25px]"
-                          filePath={d.documentUrl}
-                        />
-                        <p
-                          className="pl-[4px]"
-                          style={{ color: "blue", textDecoration: "underline" }}
-                        >
-                          {d.documentName}
-                        </p>
-                      </a>
-                      <label htmlFor="upload-eval-file"></label>
-                    </span>
-                  ))}
-                </div>
-              </>
+                        {d.documentName}
+                      </p>
+                    </a>
+                    <label htmlFor="upload-eval-file"></label>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-red-600">No evaluation reports uploaded.</p>
             )}
 
             <div className="w-full">
-              {selectedProposals.length > 0 && (
-                <div className="space-y-4">
-                  <span className="font-bold text-[16px] mb-[8px] flex">
-                    <span>Vendor Proposals</span>
-                  </span>
+              <div className="space-y-4">
+                <span className="font-bold text-[16px] mb-[8px] flex items-center gap-2">
+                  <span>Vendor Proposals</span>
+                </span>
+                {selectedProposals.length > 0 ? (
                   <ViewTable
                     columns={["vendor", "bidAmount"]}
                     columnLabels={{ vendor: "Vendor", bidAmount: "Bid Amount" }}
@@ -256,62 +318,47 @@ const RfpAwardflow: React.FC<IRfpDetailRight> = ({ rfpDetails, trigger }) => {
                       bidAmount: p.bidAmount,
                     }))}
                   />
+                ) : (
+                  <p className="text-xs text-red-600">No vendor proposals available.</p>
+                )}
 
-                  {selectedProposals.map((p: any) => (
-                    <div key={p.id} className="space-y-2">
-                      <span className="font-bold text-[14px] flex">
-                        <span>
-                          Bid split - {p.vendorName || `Vendor #${p.vendorId}`}
-                        </span>
-                      </span>
-                      <ViewTable
-                        columns={["itemCode", "itemName", "quantity", "amount"]}
-                        columnLabels={{
-                          itemCode: "Item Code",
-                          itemName: "Item Name",
-                          quantity: "Qty",
-                          amount: "Amount",
-                        }}
-                        items={(p.vendorRfpProposalItems || []).map(
-                          (it: any) => ({
-                            id: it.id,
-                            itemCode: it.rfpItem?.itemCode,
-                            itemName: it.rfpItem?.itemName,
-                            quantity: it.rfpItem?.quantity,
-                            amount: it.amount,
-                          })
-                        )}
-                      />
-                    </div>
-                  ))}
+                {/* Toggle for Bid split details */}
+                {selectedProposals.length > 0 && (
+                  <BidSplitSection proposals={selectedProposals} />
+                )}
 
-                  <StepIndicator steps={stepsList || []} />
-                  <div>
-                    <label className="block text-sm font-medium text-md mb-1">
-                      Selectd vendor for Award
-                    </label>
-                    <Select
-                      className="w-[400px]"
-                      placeholder="Select proposal"
-                      disabled={!enableSelect}
-                      onChange={(val) =>
-                        setDecissionPaper((x: any) => ({
-                          ...x,
-                          vendorRfpProposalId: val,
-                        }))
-                      }
-                      value={decissionPaper.vendorRfpProposalId}
-                      allowClear
-                      options={
-                        selectedProposals.map((c: any) => ({
-                          value: c.id,
-                          label: c.vendorName,
-                        })) || []
-                      }
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-md mb-1">
+                    Selected vendor for Award
+                  </label>
+                  <Select
+                    className="w-[400px]"
+                    placeholder="Select proposal"
+                    disabled={!enableSelect}
+                    onChange={(val) =>
+                      setDecissionPaper((x: any) => ({
+                        ...x,
+                        vendorRfpProposalId: val,
+                      }))
+                    }
+                    value={decissionPaper.vendorRfpProposalId}
+                    allowClear
+                    options={
+                      selectedProposals.map((c: any) => ({
+                        value: c.id,
+                        label: c.vendorName,
+                      })) || []
+                    }
+                  />
                 </div>
-              )}
+
+                {/* Approval steps are only shown when all required inputs exist */}
+                {hasDecisionPaper && evaluationDocuments.length > 0 && selectedProposals.length > 0 ? (
+                  <StepIndicator steps={stepsList || []} />
+                ) : (
+                  <div className="text-xs text-gray-500">Approval steps will appear once all required items are provided.</div>
+                )}
+              </div>
             </div>
 
             {rfpDetails?.finalBidSubmitted == null && (
@@ -334,7 +381,7 @@ const RfpAwardflow: React.FC<IRfpDetailRight> = ({ rfpDetails, trigger }) => {
               rfpDetails?.finalBidSubmitted == null ? (
               <>
                 <div className="w-full">
-                  {stepsList.map((step, index) => {
+                  {(hasDecisionPaper && evaluationDocuments.length > 0 && selectedProposals.length > 0 ? stepsList : []).map((step, index) => {
                     // Find the index of the current step
                     // Find the latest step with currentUser that comes after stepCurrent
                     let currentIndex = -1;
